@@ -103,17 +103,21 @@ app.post('/transcode-and-upload', upload.single('file'), async (req: Request, re
       '-vf', `scale=${process.env.FFMPEG_RATIO || '720:-1'}`,
       '-c:v', 'libx264',
       '-preset', 'ultrafast',
+      '-threads', '8',  // Increase threads based on your CPU cores
+      '-crf', '28',     // Reduce the quality slightly to speed up encoding
       '-g', '30',
       '-sc_threshold', '0',
-      '-hls_time', '10',
+      '-hls_time', '15',  // Increase segment time to reduce overhead
       '-hls_list_size', '0',
       '-hls_segment_type', 'mpegts',
       '-hls_flags', 'independent_segments',
       '-f', 'hls',
-      '-max_muxing_queue_size', '1024',
+      '-max_muxing_queue_size', '4096',  // Increase to reduce muxing delays
+      '-bufsize', '2M',                  // Adjust buffer size
       '-hls_segment_filename', segmentPattern,
       playlistPath
     ]);
+    
 
     ffmpeg.stderr.on('data', (data: Buffer) => {
       console.error(`FFmpeg stderr: ${data.toString()}`);

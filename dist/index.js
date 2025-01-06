@@ -32,7 +32,7 @@ const storage = multer_1.default.diskStorage({
 });
 const upload = (0, multer_1.default)({
     storage: storage,
-    limits: { fileSize: 100 * 1024 * 1024 }
+    limits: { fileSize: 5 * 1024 * 1024 * 1024 }
 });
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
@@ -70,6 +70,13 @@ function getVideoDuration(inputPath) {
         });
     });
 }
+app.get('/', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        message: 'Service is up and running',
+        timestamp: new Date().toISOString(),
+    });
+});
 app.post('/transcode-and-upload', upload.single('file'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!req.file) {
         res.status(400).json({ success: false, error: 'No file uploaded' });
@@ -93,14 +100,17 @@ app.post('/transcode-and-upload', upload.single('file'), (req, res) => __awaiter
             '-vf', `scale=${process.env.FFMPEG_RATIO || '720:-1'}`,
             '-c:v', 'libx264',
             '-preset', 'ultrafast',
+            '-threads', '8', // Increase threads based on your CPU cores
+            '-crf', '28', // Reduce the quality slightly to speed up encoding
             '-g', '30',
             '-sc_threshold', '0',
-            '-hls_time', '10',
+            '-hls_time', '15', // Increase segment time to reduce overhead
             '-hls_list_size', '0',
             '-hls_segment_type', 'mpegts',
             '-hls_flags', 'independent_segments',
             '-f', 'hls',
-            '-max_muxing_queue_size', '1024',
+            '-max_muxing_queue_size', '4096', // Increase to reduce muxing delays
+            '-bufsize', '2M', // Adjust buffer size
             '-hls_segment_filename', segmentPattern,
             playlistPath
         ]);
