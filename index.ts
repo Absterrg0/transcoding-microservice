@@ -98,26 +98,25 @@ app.post('/transcode-and-upload', upload.single('file'), async (req: Request, re
     console.log('Input file path:', inputPath);
     console.log('Output folder:', hlsFolderPath);
 
-    const ffmpeg = spawn('ffmpeg', [
-      '-i', inputPath,
-      '-vf', `scale=${process.env.FFMPEG_RATIO || '720:-1'}`,
-      '-c:v', 'libx264',
-      '-preset', 'ultrafast',
-      '-threads', '8',  // Increase threads based on your CPU cores
-      '-crf', '28',     // Reduce the quality slightly to speed up encoding
-      '-g', '30',
-      '-sc_threshold', '0',
-      '-hls_time', '15',  // Increase segment time to reduce overhead
-      '-hls_list_size', '0',
-      '-hls_segment_type', 'mpegts',
-      '-hls_flags', 'independent_segments',
-      '-f', 'hls',
-      '-max_muxing_queue_size', '4096',  // Increase to reduce muxing delays
-      '-bufsize', '2M',                  // Adjust buffer size
-      '-hls_segment_filename', segmentPattern,
-      playlistPath
-    ]);
-    
+const ffmpeg = spawn('ffmpeg', [
+  '-i', inputPath,
+  '-vf', `scale=${process.env.FFMPEG_RATIO || '720:-1'}`,      // Scale to 480p for lower resolution
+  '-c:v', 'libx264',          // Use H.264 codec
+  '-preset', 'ultrafast',     // Ultra-fast preset for speed
+  '-threads', '1',            // Limit to 1 thread due to CPU constraints
+  '-b:v', '500k',             // Lower bitrate (500kbps)
+  '-g', '30',                 // GOP size
+  '-sc_threshold', '0',       // Disable scene change detection
+  '-hls_time', '20',          // Segment duration (20 seconds)
+  '-hls_list_size', '0',      // No limit on the playlist size
+  '-hls_segment_type', 'mpegts',
+  '-hls_flags', 'independent_segments',
+  '-f', 'hls',
+  '-max_muxing_queue_size', '1024',  // Keep it low for limited memory
+  '-hls_segment_filename', segmentPattern,
+  playlistPath
+]);
+
 
     ffmpeg.stderr.on('data', (data: Buffer) => {
       console.error(`FFmpeg stderr: ${data.toString()}`);
