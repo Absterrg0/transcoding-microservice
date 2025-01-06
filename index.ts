@@ -66,6 +66,15 @@ async function getVideoDuration(inputPath: string): Promise<number> {
   });
 }
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    message: 'Service is up and running',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+
 app.post('/transcode-and-upload', upload.single('file'), async (req: Request, res: Response): Promise<void> => {
   if (!req.file) {
     res.status(400).json({ success: false, error: 'No file uploaded' });
